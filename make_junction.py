@@ -17,7 +17,7 @@ The script takes three main arguments:
 
 3. Source Location (Optional): Specify the directory where the addon is located.
    Use the `-s` or `--source` flag followed by the source directory.
-   If this argument is omitted, it defaults to "L:\\BLENDER\\ADDONS\\".
+   If this argument is omitted, it defaults to "L:\BLENDER\ADDONS\".
 
 The script requires the `blender_version` and `addon_name` to be specified in order to create the junction.
 If no arguments are specified, the script will print out the help message and terminate.
