@@ -69,7 +69,7 @@ parser.add_argument('-a', '--addon_name', metavar='A', type=str, nargs='*',
 
 # Argument to specify the source location of the addon, the addon folder (Optional)
 parser.add_argument('-s', '--source', metavar='SOURCE', type=str, nargs='*', default='L:\\BLENDER\\ADDONS\\',
-                    help='the source location of the addon, the addon folder. Default is "L:\\BLENDER\\ADDONS\\"')
+                    help='the source location of the addon, the addon folder. Default is "L:\\BLENDER\\ADDONS\\" + addon_name\\')
 
 args = parser.parse_args()
 
@@ -93,9 +93,15 @@ print(Fore.GREEN + 'Destination: ' + Fore.RESET +
 # Parse Addon Name
 addon_name = args.addon_name[0]
 
-# Parse Source Location (Default is "L:\BLENDER\ADDONS\")
-source = args.source[0]
+# Parse Source Location if source has been specified (Default is "L:\BLENDER\ADDONS\")
 source = "".join(args.source)
+
+if args.source == 'L:\\BLENDER\\ADDONS\\':
+    source_path = os.path.join(source, f"{ addon_name }")
+    print(Fore.RED + 'Default Source: ' + source_path)
+else:
+    source_path = source
+    print(Fore.RED + 'Arg Source: ' + source)
 
 print()
 print(Fore.LIGHTBLUE_EX + 'Addon Name: ' + Fore.RESET + addon_name)
@@ -106,9 +112,7 @@ if not os.path.exists(blender_addons_folder):
     print(Fore.RED + 'Blender Addon folder does not exist for the specified version')
     sys.exit(1)
 
-
-cmd = 'mklink /J /D "' + os.path.join(blender_addons_folder,
-                                      addon_name) + '" "' + os.path.join(source, addon_name) + '"'
+cmd = 'mklink /J /D "' + os.path.join(blender_addons_folder, addon_name) + '" "' + source_path + '"'
 
 print()
 # print('cmd: ' + cmd)
