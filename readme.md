@@ -33,10 +33,13 @@ python make_junction.py -b 4.0 -a my_blender_addon
 python make_junction.py -b 4.0 -a my_blender_addon -s C:\Path\To\Your\Addon
 ```
 
-### Important Notes
+## Build
 
-- Ensure that you run the script with administrative privileges as creating a directory junction requires such permissions.
-- The script assumes that your Blender addons folder is located in the typical location within `%APPDATA%\Blender Foundation\Blender`, if your Blender installation is at a custom location you will need to modify the script accordingly.
+To build the script into a standalone executable, you can use [PyInstaller](https://www.pyinstaller.org/). The following command will create a single executable file in the `dist` directory:
+
+```bash
+pyinstaller --onefile make_junction.py
+```
 
 ## Support
 
