@@ -1,6 +1,6 @@
 # Blender Addon Junction Creator
 
-This Python script facilitates the quick setup of Blender addons by creating a directory junction (a type of symbolic link on Windows) from an addon's source directory to a targeted Blender version's addons folder. It's particularly useful for addon developers who frequently update their code and need to test it within Blender.
+This Python script facilitates the quick setup of Blender addons by creating a directory junction (a symbolic link on Windows) from an addon's source directory to a targeted Blender version's addons folder. It's beneficial for developers who frequently update their addon repository in one location and must test it within various Blender versions.
 
 ## Requirements
 
@@ -15,7 +15,7 @@ To create a junction for your Blender addon, you need to specify the Blender ver
 
 ### Command-line Arguments
 
-- `-b` or `--blender_version` (Required): The Blender version string, corresponding to the addons folder name (e.g., "3.4").
+- `-b` or `--blender_version` (Required): The Blender version string corresponding to the addons folder name (e.g., "3.4").
 - `-a` or `--addon_name` (Required): The name of the addon folder for which you want to create the junction.
 - `-s` or `--source` (Optional): The full path to the addon's source directory. If not provided, it defaults to `L:\BLENDER\ADDONS\`.
 
