@@ -1,47 +1,9 @@
-
 """
-This script creates a directory junction on Windows, essentially a symbolic link, for a Blender addon. 
-The junction links the addon from its source location to the desired Blender version's addons folder. 
-This automates the process of setting up Blender addons, especially when addons are being developed 
-and frequently updated in a separate working directory.
-
-Usage:
-------
-The script takes three main arguments:
-
-1. Blender Version: Specify the Blender version's addons directory where the junction should be created.
-   Use the `-b` or `--blender_version` flag followed by the Blender version string (e.g., "3.4").
-   
-2. Addon Name: Specify the exact name of the addon folder you want to create the junction for.
-   Use the `-a` or `--addon_name` flag followed by the addon name string.
-
-3. Source Location (Optional): Specify the directory where the addon is located.
-   Use the `-s` or `--source` flag followed by the source directory.
-   If this argument is omitted, it defaults to "L:\BLENDER\ADDONS\".
-
-The script requires the `blender_version` and `addon_name` to be specified in order to create the junction.
-If no arguments are specified, the script will print out the help message and terminate.
-
-Examples:
----------
-Creating a junction for an addon called "my-blender-addon" for Blender version 3.4:
-
-    python junction_for_blender_addon.py -b 3.4 -a my-blender-addon
-
-Creating a junction with a specified source location:
-
-    python junction_for_blender_addon.py -b 3.4 -a my-blender-addon -s C:\\MyAddons\\
-
-Note:
------
-This script is designed to work on Windows due to the use of the `mklink` command.
-The Blender addons folder is typically located in the user's AppData folder (accessed with %APPDATA%),
-and this script constructs that path dynamically for the specified Blender version.
-
-The script also outputs the constructed paths and the actual command line string that it will use to create the junction.
-Please ensure you have the necessary permissions to create junctions on the system.
+This script facilitates the quick setup of Blender addons by creating a directory junction 
+from an addon's source directory to a targeted Blender version's addons folder.
+It's beneficial for developers who frequently update their addon repository in one location
+and must test it within various Blender versions
 """
-
 
 import os
 import sys
@@ -52,69 +14,102 @@ init(autoreset=True)
 
 parser = argparse.ArgumentParser(
     prog='make_junction.py',
-    description='Create a junction for a blender addon in the specified blender addons folder.',
-    epilog='IE: make_junction -b 3.4 -a my-blender-addon -s C:\\MyAddons\\'
+    description=f'Create a junction for a blender addon for specific blender version. Choose between flags {Fore.RED}OR{Fore.RESET} positional arguments usage.',
+    epilog=f'make_junction -b 3.4 -a MyAddon -s C:\\MyAddon\\ {Fore.RED}OR{Fore.RESET} make_junction 3.4 MyAddon C:\\MyAddon\\'
 )
 
-# Argument to specify the blender version (Required)
-parser.add_argument('-b', '--blender_version', metavar='B', type=str, nargs='*',
-                    help='the blender version as a string, ie: "3.4", "3.5"\
-                        As the name of the folder you see in the addons blender folder\
-                        "...AppData\Roaming\Blender Foundation\Blender"')
+# Argument to specify the blender version (Required, positional or as a flag)
+parser.add_argument('blender_version', nargs='?', type=str,
+                    help='The Blender version as a string, e.g., "3.4".')
+parser.add_argument('-b', '--blender_version', dest='blender_version_flag', type=str,
+                    help='The Blender version as a string, e.g., "3.4".')
 
-# Argument to specify the name of the addon (Required)
-parser.add_argument('-a', '--addon_name', metavar='A', type=str, nargs='*',
-                    help='the name of the addon you want to create the junction for\
-                        ie: "my-blender-addon"\n')
+# Argument to specify the name of the addon (Required, positional or as a flag)
+parser.add_argument('addon_name', nargs='?', type=str,
+                    help='The name of the addon, e.g., "my-addon".')
+parser.add_argument('-a', '--addon_name', dest='addon_name_flag', type=str,
+                    help='The name of the addon, e.g., "my-addon".')
 
-# Argument to specify the source location of the addon, the addon folder (Optional)
-parser.add_argument('-s', '--source', metavar='SOURCE', type=str, nargs='*', default='L:\\BLENDER\\ADDONS\\',
-                    help='the source location of the addon, the addon folder. Default is "L:\\BLENDER\\ADDONS\\" + addon_name\\')
+# Argument to specify the source location of the addon (Optional, positional or as a flag)
+parser.add_argument('source', nargs='?', type=str, default='L:\\BLENDER\\ADDONS\\',
+                    help='The source path of the addon. Default is "L:\\BLENDER\\ADDONS\\" + addon_name')
+parser.add_argument('-s', '--source', dest='source_flag', type=str,
+                    help='The source location of the addon.')
 
 args = parser.parse_args()
 
-# If no arguments are passed, print the help
-if len(sys.argv) == 1:
-    parser.print_help(sys.stderr)
-    sys.exit(1)
+# Decide which argument values to use based on whether the flags were provided
+blender_version = args.blender_version_flag if args.blender_version_flag is not None else args.blender_version
+addon_name = args.addon_name_flag if args.addon_name_flag is not None else args.addon_name
+source = args.source_flag if args.source_flag is not None else args.source
 
-# Parse Blender Version
-blender_version = args.blender_version[0]
+# If no Blender Version or Addon Name are provided, display help
+if not blender_version or not addon_name:
+    parser.print_help()
+    sys.exit(1)
 
 # Construct Blender Addons Folder from Blender Version
-blender_addons_folder = os.path.join(os.getenv(
-    'APPDATA'), 'Blender Foundation', 'Blender', blender_version, 'scripts', 'addons')
+blender_addons_folder = os.path.join(
+    os.getenv('APPDATA'),
+    'Blender Foundation',
+    'Blender',
+    blender_version,
+    'scripts',
+    'addons'
+    )
 
-print()
-print(Fore.GREEN + 'Blender Version: ' + Fore.RESET + blender_version)
-print(Fore.GREEN + 'Destination: ' + Fore.RESET +
-      '"' + blender_addons_folder + '"')
+junction_path = os.path.join(blender_addons_folder, addon_name)
 
-# Parse Addon Name
-addon_name = args.addon_name[0]
+# If the source is the default, append the addon name
+if source == 'L:\\BLENDER\\ADDONS\\' and addon_name:
+    
+    # Check if the addon exists in the default source path
+    if os.path.exists(os.path.join(source, addon_name)):
+        source = os.path.join(source, addon_name)
+    else:
+        print()
+        print(Fore.RED + 'ERROR')
+        print(Fore.RED + 'Addon not found in Source path specified:')
+        print()
+        print(os.path.join(source, addon_name))
+        print()
+        sys.exit(1)
 
-# Parse Source Location if source has been specified (Default is "L:\BLENDER\ADDONS\")
-source = "".join(args.source)
-
-if args.source == 'L:\\BLENDER\\ADDONS\\':
-    source_path = os.path.join(source, f"{ addon_name }")
-    print(Fore.RED + 'Default Source: ' + source_path)
 else:
-    source_path = source
-    print(Fore.RED + 'Arg Source: ' + source)
+    source = os.path.abspath(source)
+        
 
-print()
-print(Fore.LIGHTBLUE_EX + 'Addon Name: ' + Fore.RESET + addon_name)
-print(Fore.LIGHTBLUE_EX + 'Source: ' + Fore.RESET + '"' + source + '"')
-
+# Check if the destination Blender addons folder exists
 if not os.path.exists(blender_addons_folder):
     print()
-    print(Fore.RED + 'Blender Addon folder does not exist for the specified version')
+    print(Fore.RED + 'ERROR')
+    print(Fore.RED + 'Blender Addon folder does not exist for the specified version.')
+    print()
+    print(os.path.join(
+    os.getenv('APPDATA'),
+    'Blender Foundation',
+    'Blender',
+    Fore.RED + blender_version + Fore.RESET,
+    'scripts',
+    'addons'
+    ))
+    print()
     sys.exit(1)
 
-cmd = 'mklink /J /D "' + os.path.join(blender_addons_folder, addon_name) + '" "' + source_path + '"'
-
+# Print a recap of the arguments
 print()
-# print('cmd: ' + cmd)
+print(Fore.YELLOW + 'Creating Junction with the following arguments:')
+print()
+print(Fore.GREEN + f'Blender Version: { Fore.RESET + blender_version}')
+print(Fore.GREEN + f'Addon Name: { Fore.RESET + addon_name}')
+print()
+print(Fore.LIGHTCYAN_EX + f'Source: { Fore.RESET + source}')
+print(Fore.LIGHTCYAN_EX + f'Destination: { Fore.RESET + junction_path}')
+print()
 
+# Command to create the directory junction
+cmd = f'mklink /J "{junction_path}" "{source}"'
+
+# Execute the command to create the junction
 os.system(cmd)
+print()
